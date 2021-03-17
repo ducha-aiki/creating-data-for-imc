@@ -1,0 +1,38 @@
+Scripts in this folder are used to convert colmap output to benchmark format.
+
+## Standard Colmap output:
++-- base_folder
+|     +-- seq_1
+|     |     +-- dense
+|     |     |     +--images
+|     |     |     +--sparse
+|     |     |     +--stereo
+|     +-- seq_2
+|     | …
+
+## Benchmark test sequence folder:
++-- base_folder
+|     +-- seq_1
+|     |     +-- set_100
+|     |     |     +--calibration
+|     |     |     +--depth_maps
+|     |     |     +--images
+|     |     |     +--new_vis_pairs
+|     |     |     +--sub_set
+|     |     |     +--visibility*
+|     |     |     +--calibration.txt
+|     |     |     +--depth_maps.text
+|     |     |     +--images.txt
+|     |     |     +--visibility.txt*
+|     +-- seq_2
+|     | …
+* legacy visibility format not use any more
+
+## Instruction
+1. run process.py* to generate clean-up depth map. 
+2. run pairs.py* to generate visibility file. 
+3. run genDataFromCOLMAP.py* to convert colmap format to benchmark format
+4. run genTripletsFromData.py* to subsample 100 images from sequence
+5. run rotate_image.py* to rotate images to upright position
+* change base path and sequence names accordingly and keep other values as default.
+

@@ -67,7 +67,10 @@ def parse_image(args):
     # Some depth files do not exist?
     in_fname=f'{src}/depth_masks/{cur_image.name}.depth.exr'
     if isfile(in_fname):
-        depth = read_depth_image(in_fname)
+        try:
+            depth = read_depth_image(in_fname)
+        except:
+            return False
     else:
         return False
 
@@ -87,7 +90,8 @@ def parse_image(args):
     T = cur_image.tvec
     p = cur_image.xys
     pars = cur_camera.params
-    K = np.array([[pars[0], 0, pars[2]], [0, pars[1], pars[3]], [0, 0, 1]])
+    K = np.array([[pars[0], 0, pars[1]], [0, pars[0], pars[2]], [0, 0, 1]])
+    #K = np.array([[pars[0], 0, pars[2]], [0, pars[1], pars[3]], [0, 0, 1]])
     pids = cur_image.point3D_ids
     v = pids >= 0
     # print('Number of points: {}'.format((pids > -1).sum()))
@@ -110,16 +114,19 @@ def parse_image(args):
     valid = []
     min_d = np.zeros(nx * ny)
     tree = KDTree(points)
-    for i, p in enumerate(x_w.T):
+    min_dist = (tree.query(x_w.T, 1)[0]).reshape(-1)
+    valid_pts = min_dist < th
+    valid = np.flatnonzero(valid_pts)
+    #for i, p in enumerate(x_w.T):
         # if i % 5000 == 0:
         #     print(f'At {i+1}/{x_w.shape[1]}')
         # d = np.linalg.norm(points - p, axis=1)
         # min_d[i] = d.min()
-        min_d[i] = tree.query(p, 1)[0]
-        if min_d[i] < th:
-            valid.append(i)
-
-    # print(f'Valid points: {len(valid)}/{x_w.shape[1]}')
+    #    min_d[i] = tree.query(p, 1)[0]
+    #    if min_d[i] < th:
+    #        valid.append(i)
+    #print (valid)
+    print(f'Valid points: {len(valid)}/{x_w.shape[1]}')
 
     # Save the minimum distance to the model in case we want to recompute the depth maps
     # (Thresholding is a bit iffy...)
@@ -141,7 +148,11 @@ def parse_image(args):
 
     # Draw always with full range
     # gray = (d_resized - d_resized[d_resized > 0].min()) / (d_resized.max() - d_resized[d_resized > 0].min())
-    gray = (d_resized.max() - d_resized) / (d_resized.max() - d_resized[d_resized > 0].min())
+    try:
+        gray = (d_resized.max() - d_resized) / (d_resized.max() - d_resized[d_resized > 0].min() + 1e-5)
+    except:
+        print ("Warning, no gray")
+        return False
     rgb = gray[None, ...].repeat(3, axis=0)
     rgb[0][d_resized == 0] = 1
     rgb[1][d_resized == 0] = 0
