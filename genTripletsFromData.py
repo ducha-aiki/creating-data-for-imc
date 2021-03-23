@@ -12,7 +12,7 @@ import deepdish as dd
 from tqdm import tqdm
 from path_helper import get_fullpath_list
 from load_helper import load_vis
-
+from argparse import ArgumentParser
 def intersection(lst1, lst2): 
     return list(set(lst1) & set(lst2))
 
@@ -28,79 +28,81 @@ def get_image_pairs(vis_list, num_images, vis_th):
     return image_pairs
 
 def write_images_txt(set_loc, set_xx_key, data_loc):
-    images_txt = set_loc + 'images.txt'
+    images_txt = os.path.join(set_loc ,'images.txt')
     with open(images_txt, 'w') as f:
         for key in set_xx_key:
             image_path = "images/{}.jpg".format(key)
             f.write(image_path + '\n')
 
 def write_visibility_txt(set_loc, set_xx_key, data_loc):
-    images_txt = set_loc + 'visibility.txt'
+    images_txt = os.path.join(set_loc ,'visibility.txt')
     with open(images_txt, 'w') as f:
         for key in set_xx_key:
             visibility_path = "visibility/vis_{}.txt".format(key)
             f.write(visibility_path + '\n')
 
 def write_subset_images_txt(set_loc, set_xx_key, data_loc, idx, set_name):
-    if not os.path.exists(set_loc + 'sub_set/'):
-        os.makedirs(set_loc + 'sub_set/')    
-    images_txt = set_loc + 'sub_set/' + set_name + '_{:03.0f}.txt'.format(idx)
+    dir1 = os.path.join(set_loc, 'sub_set')
+    if not os.path.exists(dir1):
+        os.makedirs(dir1)    
+    images_txt = os.path.join(dir1,   set_name + '_{:03.0f}.txt'.format(idx))
     with open(images_txt, 'w') as f:
         for key in set_xx_key:
             image_path = "images/{}.jpg".format(key)
             f.write(image_path + '\n')    
 
 def write_depth_maps_txt(set_loc, set_xx_key, data_loc):
-    images_txt = set_loc + 'depth_maps.txt'
+    images_txt = os.path.join(set_loc,'depth_maps.txt')
     with open(images_txt, 'w') as f:
         for key in set_xx_key:
             image_path = "depth_maps/{}.h5".format(key)
             f.write(image_path + '\n')
 
 def write_calibration_txt(set_loc, set_xx_key, data_loc):
-    calibration_txt = set_loc + 'calibration.txt'
+    calibration_txt = os.path.join(set_loc,'calibration.txt')
     with open(calibration_txt, 'w') as f:
         for key in set_xx_key:
             f.write('calibration/calibration_'+key+'.h5\n')           
 
 def copy_calibration_files(set_loc, set_xx_key, data_loc):
-    src_cal_dir = data_loc + 'calibration/'
-    dst_cal_dir = set_loc + 'calibration/'
+    src_cal_dir = os.path.join(data_loc , 'calibration')
+    dst_cal_dir = os.path.join(set_loc,'calibration')
     if not os.path.exists(dst_cal_dir):
         os.makedirs(dst_cal_dir)
     for key in set_xx_key:
-        copyfile(src_cal_dir + 'calibration_' + key + '.h5', dst_cal_dir + 'calibration_' + key + '.h5')
+        copyfile(os.path.join(src_cal_dir, 'calibration_' + key + '.h5'),
+                 os.path.join(dst_cal_dir, 'calibration_' + key + '.h5'))
 
 def copy_images(set_loc, set_xx_key, data_loc):
-    src_images_dir = data_loc + 'images/'
-    dst_images_dir = set_loc + 'images/'
+    src_images_dir = os.path.join(data_loc,'images')
+    dst_images_dir = os.path.join(set_loc, 'images')
     if not os.path.exists(dst_images_dir):
         os.makedirs(dst_images_dir)
     for key in set_xx_key:
-        copyfile(src_images_dir + key + '.jpg', dst_images_dir + key + '.jpg')
+        copyfile(os.path.join(src_images_dir, key + '.jpg'),
+                 os.path.join(dst_images_dir, key + '.jpg'))
 
 def copy_depth_maps(set_loc, set_xx_key, data_loc,):
-    src_depth_dir = data_loc + 'depth_maps/'
-    dst_depth_dir = set_loc + 'depth_maps/'
+    src_depth_dir = os.path.join(data_loc,'depth_maps')
+    dst_depth_dir =  os.path.join(set_loc, 'depth_maps')
     if not os.path.exists(dst_depth_dir):
         os.makedirs(dst_depth_dir)
     for key in set_xx_key:
-        in_img = src_depth_dir + key + '.h5'
+        in_img = os.path.join(src_depth_dir, key + '.h5')
         if not os.path.isfile(in_img):
             print (f"Depth map {in_img} is missing, skipping")
             continue
         # copyfile(src_depth_dir + key + '.jpg', dst_images_dir + key + '.jpg')
-        copyfile(in_img, dst_depth_dir + key + '.h5')
+        copyfile(in_img, os.path.join(dst_depth_dir, key + '.h5'))
 
 def write_new_vis_pairs(set_loc, set_xx_key, data_loc):
-    src_vis_dir = data_loc + 'new-vis-pairs/'
-    dst_vis_dir = set_loc + 'new-vis-pairs/'
+    src_vis_dir = os.path.join(data_loc, 'new-vis-pairs')
+    dst_vis_dir =os.path.join(set_loc, 'new-vis-pairs')
     if not os.path.exists(dst_vis_dir):
         os.makedirs(dst_vis_dir)
     for th in np.arange(0, 1, 0.1):
         valid_pairs = []
-        pairs= dd.io.load(src_vis_dir+'keys-th-{:0.1f}.dd'.format(th))
-        print (pairs)
+        pairs= dd.io.load(os.path.join(src_vis_dir,'keys-th-{:0.1f}.dd'.format(th)))
         for pair in pairs:
             if pair.split('-')[0] in set_xx_key and pair.split('-')[1] in set_xx_key:
                 valid_pairs.append(pair)
@@ -109,7 +111,7 @@ def write_new_vis_pairs(set_loc, set_xx_key, data_loc):
 
 def write_visibility_files(set_loc, set_xx_key, data_loc, set_xx_idx ):
     vis_list = get_fullpath_list(data_loc, "visibility")
-    vis_dir = set_loc + 'visibility/'
+    vis_dir = os.path.join(set_loc,  'visibility')
     if not os.path.exists(vis_dir):
         os.makedirs(vis_dir)
 
@@ -127,7 +129,7 @@ def write_visibility_files(set_loc, set_xx_key, data_loc, set_xx_idx ):
         # If same image, keep -1
         # If no mathes, keep 0
         # First get the file name
-        file_name = vis_dir + vis_file_name
+        file_name = os.path.join(vis_dir,vis_file_name)
 
         # Open file and fill contents
         with open(file_name, 'w') as f:
@@ -265,8 +267,8 @@ def gen_subset(data_loc_master, data_list, max_num_pairs):
     for d in data_list:
         print('Working on {}'.format(d))
         print('Create set_100')
-        data_loc = data_loc_master + d + '/all/'
-        set_loc = data_loc_master + d + '/set_100/'
+        data_loc = os.path.join(os.path.join(data_loc_master, d), 'all')
+        set_loc = os.path.join(os.path.join(data_loc_master, d), 'set_100')
         if not os.path.exists(set_loc):
             os.makedirs(set_loc)
 
@@ -385,10 +387,11 @@ def gen_subset(data_loc_master, data_list, max_num_pairs):
                     break
 
 if __name__ == '__main__':
-    root = '/home/old-ufo/datasets/tree/'
-    data_loc_master = root#'/home/yuhe/workspace/sfm_benchmark/'
-    seqs = ['tree_in_colmap']
-    data_list = seqs#['united_states_capitol_tmp']
-    random.seed(1234)
+    parser = ArgumentParser()
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--seq", type=str, required=True)
+    parser.add_argument("--seed", type=int, default=1234)
+    params = parser.parse_args()
+    random.seed(params.seed)
     max_num_pairs = 100000
-    gen_subset(data_loc_master, data_list, max_num_pairs)
+    gen_subset(params.root, [params.seq], max_num_pairs)

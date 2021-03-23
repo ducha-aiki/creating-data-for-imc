@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 from path_helper import get_fullpath_list
 from load_helper import load_calib
 from io_helper import save_h5, load_h5
-
+from argparse import ArgumentParser
 
 def roatat_image(r, t, k, image, depth):
     # init axis in cam cooridnate
@@ -129,6 +129,8 @@ def main(data_base_dir,data_list):
 
 
 if __name__ == '__main__':
-    data_base_dir = '/home/old-ufo/datasets/tree/'
-    data_list = ['tree_in_colmap']
-    main(data_base_dir,data_list)
+    parser = ArgumentParser()
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--seq", type=str, required=True)
+    params = parser.parse_args()
+    main(params.root, [params.seq])

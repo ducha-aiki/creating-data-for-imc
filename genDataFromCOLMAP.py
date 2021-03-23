@@ -12,6 +12,7 @@ from colmap.scripts.python.read_write_model import (read_model,
 import numpy as np
 import h5py
 import os
+from argparse import ArgumentParser
 import deepdish as dd
 # Colmap
 from colmap.scripts.python.read_dense import read_array
@@ -36,13 +37,14 @@ def read_colmap_txt(dir_name):
     return  cameras, images, points
 
 
-def genDataFromColmap(data_loc_master, data_list):
+def genDataFromColmap(data_loc_master, data_list, dilation, dep_size, th):
     for d in data_list:
         print('Working on {}'.format(d))
-        data_loc = data_loc_master + d + '/'
+        data_loc = os.path.join(data_loc_master, d)
+        data_loc_all = os.path.join(data_loc, 'all')
         
-        if not os.path.exists(data_loc+'all/'):
-            os.makedirs(data_loc+'all/')
+        if not os.path.exists(data_loc_all):
+            os.makedirs(data_loc_all)
 
         # ----Tast 1: Setup images.txt----
         print("  setting up images txt ...")
@@ -55,37 +57,39 @@ def genDataFromColmap(data_loc_master, data_list):
         image_keys = list(images.keys())
         image_keys.sort()
 
-        images_txt = data_loc + 'all/images.txt'
+        images_txt = os.path.join(data_loc_all, 'images.txt')
         with open(images_txt, 'w') as f:
             for key in image_keys:
                 f.write('images/'+images[key].name+'\n')
 
         # ----Task 2: Setup images directory----
         print("  setting up images directory ...")
-        src = data_loc + 'dense/images/'
-        dest = data_loc + 'all/images/'
-        try:
-            shutil.copytree(src, dest)
-        except:
-            pass
+        src = os.path.join(data_loc, 'dense/images')
+        dest = os.path.join(data_loc_all, 'images')
+        if os.path.isdir(dest):
+            shutil.rmtree(dest)
+        shutil.copytree(src, dest)
         # ----Task 3: Setup depth_maps.txt----
         print("  setting up depth_maps txt ...")
         # We have image_keys from above use them to write depth_maps.txt
-        calibration_txt = data_loc + 'all/depth_maps.txt'
-        with open(calibration_txt, 'w') as f:
+        depth_maps_txt = os.path.join(data_loc_all, 'depth_maps.txt')
+        with open(depth_maps_txt, 'w') as f:
             for key in image_keys:
-                f.write('calibration/'+images[key].name[:-4]+'.h5\n')
+                f.write('calibration/'+images[key].name.replace('.jpg', '.h5')+'\n')
 
         # ----Task 4: Setup depth map directory----
         print("  setting up depth_maps directory ...")
-        src = data_loc + 'dense/stereo/depth_maps_clean_200_th_0.20/'
-        dest = data_loc + 'all/depth_maps/'
+        
+        src = os.path.join(data_loc, 'dense/stereo/depth_maps_clean_{:d}_th_{:.2f}'.format(dep_size, th))
+        dest = os.path.join(data_loc_all, 'depth_maps')
+        if os.path.isdir(dest):
+            shutil.rmtree(dest)
         shutil.copytree(src, dest)
 
         # ----Task 5: Setup calibration.txt----
         print("  setting up calibration txt ...")
         # We have image_keys from above use them to write calibration.txt
-        calibration_txt = data_loc + 'all/calibration.txt'
+        calibration_txt = os.path.join(data_loc_all, 'calibration.txt')
         with open(calibration_txt, 'w') as f:
             for key in image_keys:
                 f.write('calibration/calibration_'+images[key].name[:-4]+'.h5\n')
@@ -102,7 +106,7 @@ def genDataFromColmap(data_loc_master, data_list):
         #cameras = read_cameras_binary(data_loc + 'dense/sparse/cameras.bin')
 
         # Generate calibration directory
-        cal_dir = data_loc + 'all/calibration'
+        cal_dir = os.path.join(data_loc_all, 'calibration')
         if not os.path.exists(cal_dir):
             os.makedirs(cal_dir)
 
@@ -115,7 +119,7 @@ def genDataFromColmap(data_loc_master, data_list):
             T = images[key].tvec
             # Save K, q, R, T to a file
             # First get the file name
-            file_name = data_loc + 'all/calibration/calibration_' + images[key].name[:-4] + '.h5'
+            file_name = os.path.join(data_loc_all, 'calibration/calibration_' + images[key].name.replace('.jpg', '.h5'))
             with h5py.File(file_name, 'w') as f:
                 f.create_dataset('K', data=K)
                 f.create_dataset('q', data=q)
@@ -127,10 +131,11 @@ def genDataFromColmap(data_loc_master, data_list):
         print("  setting up covisibility directory ...")
         # Read pairs file
         # each pair contains [bbox1, bbox2, visibility1, visibility2, Number of shared matches]
-        pairs = dd.io.load(data_loc + 'dense/stereo/pairs-dilation-0.00.h5')
+        
+        pairs = dd.io.load(os.path.join(data_loc, f'dense/stereo/pairs-dilation-{dilation:.2f}.h5'))
         
         # Create a visibility directory if it doesn't exist
-        vis_dir = data_loc + 'all/new-vis-pairs'
+        vis_dir = os.path.join(data_loc_all, 'new-vis-pairs')
         if not os.path.exists(vis_dir):
             os.makedirs(vis_dir)
 
@@ -144,27 +149,26 @@ def genDataFromColmap(data_loc_master, data_list):
                     im1 = images[a].name[:-4]#[0]
                     im2 = images[b].name[:-4]#[0]
                     keys.append('-'.join(sorted([im1, im2],reverse=True)))
-            print (keys)
             dd.io.save('{}/keys-th-{:0.1f}.dd'.format(vis_dir, th), keys)
 
         # --------Task 6: Setup visibility.txt--------        
         print("  setting up visibility txt")
 
         # We have image_keys from above use them to write visibility.txt
-        visibility_txt = data_loc + 'all/visibility.txt'
+        visibility_txt = os.path.join(data_loc_all, 'visibility.txt')
         with open(visibility_txt, 'w') as f:
             for key in image_keys:
-                f.write('visibility/vis_'+images[key].name[:-4]+'.txt\n')
+                f.write('visibility/vis_'+images[key].name.replace('.jpg','.txt\n'))
 
 
         # --------Task 7: Setup visibility threshold directory--------        
         print("  setting up visibility threshold directory ...")
         # Read pairs file
         # each pair contains [bbox1, bbox2, visibility1, visibility2, Number of shared matches]
-        pairs = dd.io.load(data_loc + 'dense/stereo/pairs-dilation-0.00.h5')
+        pairs = dd.io.load(os.path.join(data_loc, f'dense/stereo/pairs-dilation-{dilation:.2f}.h5'))
         
         # Create a visibility directory if it doesn't exist
-        vis_dir = data_loc + 'all/visibility'
+        vis_dir =  os.path.join(data_loc_all, 'visibility')
         if not os.path.exists(vis_dir):
             os.makedirs(vis_dir)
 
@@ -180,7 +184,7 @@ def genDataFromColmap(data_loc_master, data_list):
             # If no mathes, keep 0
             
             # First get the file name
-            file_name = data_loc + 'all/visibility/vis_' + images[key].name[:-4] + '.txt'
+            file_name =  os.path.join(data_loc_all,'visibility/vis_' + images[key].name.replace('.jpg','.txt'))
             
             # Open file and fill contents
             with open(file_name, 'w') as f:
@@ -200,8 +204,11 @@ def genDataFromColmap(data_loc_master, data_list):
                         f.write('0\n')
 
 if __name__ == '__main__':
-    root = '/home/old-ufo/datasets/tree/'
-    data_loc_master = root#'/home/yuhe/workspace/sfm_benchmark/'
-    seqs = ['tree_in_colmap']
-    data_list = seqs#['united_states_capitol_tmp']
-    genDataFromColmap(data_loc_master, data_list)
+    parser = ArgumentParser()
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--seq", type=str, required=True)
+    parser.add_argument("--dilation", type=float, default=0)
+    parser.add_argument("--n", type=int, default=300)
+    parser.add_argument("--th", type=float, default=0.1)
+    params = parser.parse_args()
+    genDataFromColmap(params.root, [params.seq], params.dilation,  params.n,  params.th)

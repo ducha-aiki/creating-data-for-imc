@@ -18,7 +18,7 @@ def load_h5(filename):
     with h5py.File(filename, 'r') as f:
         keys = [key for key in f.keys()]
         for key in keys:
-            dict_to_load[key] = f[key].value
+            dict_to_load[key] = f[key][()]#.value
     return dict_to_load
 
 def load_image(image_path,

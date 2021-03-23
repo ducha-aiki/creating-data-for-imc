@@ -49,12 +49,12 @@ def read_colmap_txt(dir_name):
     
 
 def parse_image(args):
-    cur_camera, cur_image, points, src, n, th = args[0], args[1], args[2], args[3], args[4], args[5]
+    cur_camera, cur_image, depth_dir, points, src, n, th = args[0], args[1], args[2], args[3], args[4], args[5], args[6]
 
-    output = src + '/dense/stereo/depth_maps_clean_{:d}_th_{:.2f}'.format(n, th)
+    output = os.path.join(src,'dense/stereo/depth_maps_clean_{:d}_th_{:.2f}'.format(n, th))
     if not os.path.isdir(output):
         os.makedirs(output)
-    fn = output + '/' + '.'.join(cur_image.name.split('.')[:-1])
+    fn = os.path.join(output,  '.'.join(cur_image.name.split('.')[:-1]))
 
     if isfile(fn + '.h5') and isfile(fn + '.jpg'):
         print(f'Current file: "{cur_image.name}". Done, skipping!')
@@ -62,16 +62,18 @@ def parse_image(args):
     else:
         print(f'Current file: "{cur_image.name}". Processing...')
 
-    image = imread(src + '/dense/images/' + cur_image.name)
-
+    image = imread(os.path.join(src, 'dense/images/' + cur_image.name))
+    print (os.path.join(src, 'dense/images/' + cur_image.name))
     # Some depth files do not exist?
-    in_fname=f'{src}/depth_masks/{cur_image.name}.depth.exr'
+    in_fname=os.path.join(depth_dir, f'{cur_image.name}.depth.exr'.replace('jpg.depth.exr','png.depth.exr'))
     if isfile(in_fname):
         try:
             depth = read_depth_image(in_fname)
         except:
+            print (f"Warning! Cannot open existing {in_fname}")
             return False
     else:
+        print (f"Warning! Cannot find {in_fname}")
         return False
 
     # min_depth, max_depth = np.percentile(depth, [5, 95])
@@ -169,13 +171,13 @@ def parse_image(args):
     return True
 
 
-def parse_seq(root, seq, n, th, poolsize):
+def parse_seq(root, seq, depth_dir, n, th, poolsize):
     t = time()
-    src = root + '/' + seq
-    output = src + '/dense/stereo/depth_maps_clean_{:d}_th_{:.2f}'.format(n, th)
+    
+    src = root#os.path.join(root,seq)
+    output = os.path.join(src, 'dense/stereo/depth_maps_clean_{:d}_th_{:.2f}'.format(n, th))
     if not isdir(output):
         makedirs(output)
-
     # Parse reconstruction
     print(f'Processing: "{seq}"')
     cameras, images, points = read_colmap_txt(os.path.join(src,'reconstruction'))
@@ -194,7 +196,7 @@ def parse_seq(root, seq, n, th, poolsize):
 
     args = []
     for index in indices:
-        args.append((cameras[index], images[index], xyz, src, n, th))
+        args.append((cameras[index], images[index],depth_dir, xyz, src, n, th))
 
     # num_proc = int(.8 * cpu_count())
     # pool = Pool(processes=num_proc)
@@ -218,16 +220,11 @@ def parse_seq(root, seq, n, th, poolsize):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--seq", type=str)
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--depth_dir", type=str, required=True)
+    parser.add_argument("--seq", type=str, required=True)
     parser.add_argument("--n", type=int, default=300)
     parser.add_argument("--th", type=float, default=0.1)
-    parser.add_argument("--poolsize", type=int, default=8)
+    parser.add_argument("--poolsize", type=int, default=4)
     params = parser.parse_args()
-
-    root = '/home/old-ufo/datasets/tree/'
-    # seq = 'florence_cathedral_side'
-
-    #seqs = params.seq.split(',')
-    seqs = ['tree_in_colmap']
-    for seq in seqs:
-        parse_seq(root, seq, params.n, params.th, params.poolsize)
+    parse_seq(params.root, params.seq, params.depth_dir, params.n, params.th, params.poolsize)
