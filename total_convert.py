@@ -39,7 +39,7 @@ if __name__ == '__main__':
     run_str = f'./create_image_list.sh "{args.depth_dir}" img_list_temp_png.txt'
     print ("Step 1: We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 1 done")
     print ()
     print ("*******************************************************")
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     run_str = f'./convert_imglist_to_jpg.sh "{args.in_png_image_dir}" img_list_temp_png.txt "{out_jpg_image_dir}" {args.out_imglist_txt}'
     print ("Step 2: We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 2 done")
     print ()
     print ("*******************************************************")
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     run_str = f'kapture_import_bundler.py --input "{args.bundler_file}" --image-path "{out_jpg_image_dir}" --add-reconstruction --output "{out_kapt}"  --image-list "{args.out_imglist_txt}"'
     print ("Step 3: Conversion from bundler to kapture. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 3 done")
     print ()
     print ("*******************************************************")
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     run_str = f'kapture_export_colmap.py -i "{out_kapt}" -txt "{out_colmap}/reconstruction" -db "{out_colmap}/{args.seq_name}.db"'
     print ("Step 4: Conversion from kapture to colmap. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 4 done")
     print ()
     print ("*******************************************************")
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     run_str = f'python -utt process.py --root "{out_colmap}" --depth_dir "{args.depth_dir}" --seq "{args.seq_name}" --th {args.depth_th_3dpt} --n {args.depth_resize_to} --poolsize {poolsize}'
     print ("Step 5: Cleaning-up depth maps: keep only those, which are supported by sparse 3d point cloud. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 5 done")
     print ()
     print ("*******************************************************")
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     run_str = f'python -utt pairs.py --root "{args.aux_colmap_dir}"  --seq "{args.seq_name}" --dilation {args.dilation} --th {args.inl_ratio_th}'
     print ("Step 6: Creating image pairs. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 6 done")
     print ()
     print ("*******************************************************")
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     run_str = f'python -utt genDataFromCOLMAP.py --root "{args.aux_colmap_dir}"  --seq "{args.seq_name}" --dilation {args.dilation} --th {args.inl_ratio_th} --n {args.depth_resize_to}'
     print ("Step 7: Creating image pairs. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 7 done")
     print ()
     print ("*******************************************************")
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     run_str = f'python -utt genTripletsFromData.py --root "{args.aux_colmap_dir}"  --seq "{args.seq_name}"  --seed {args.seed}'
     print ("Step 8: Creating image triplets. We are going the run the following command:")
     print (run_str)
-    #out = subprocess.run(run_str, shell=True)
+    out = subprocess.run(run_str, shell=True)
     print ("Step 8 done")
     print ()
     print ("*******************************************************")

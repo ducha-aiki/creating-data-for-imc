@@ -93,8 +93,8 @@ def check_pair(args):
     t_start = time()
 
     cam1, cam2, (h1, w1), (h2, w2), im1, im2, points, src, idx1, idx2, dilation = args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]
-    verbose = True
-    #verbose = False
+    #verbose = True
+    verbose = False
 
     # Do not use these values! They are before rescaling/rectification
     # w1, h1 = cam1.width, cam1.height
@@ -192,8 +192,7 @@ def check_pair(args):
 
 def parse_seq(root, seq, dilation):
     t = time()
-    src = root + '/' + seq
-
+    src =  os.path.join(root, seq)
     # Parse reconstruction
     print(f'Processing: "{seq}"')
     cameras, images, points = read_colmap_txt(os.path.join(src,'reconstruction'))
@@ -262,32 +261,25 @@ def parse_seq(root, seq, dilation):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--seq", type=str)
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--seq", type=str, required=True)
     parser.add_argument("--dilation", type=float, default=0)
+    parser.add_argument("--th", type=float, default=0.1)
     params = parser.parse_args()
-
-    root = '/home/old-ufo/datasets/tree/'
-    # seq = 'florence_cathedral_side'
-
-    #seqs = params.seq.split(',')
-    seqs = ['tree_in_colmap']
-    
-    th = 0.1
-    #seqs = params.seq.split(',')
-    # seqs = ['united_states_capitol_tmp']
-    for seq in seqs:
-        r = parse_seq(root, seq, params.dilation)
-        n, n_th = 0, 0
-        for k in r:
-            if r[k][0] is not None and r[k][1] is not None:
-                n += 1
-            if r[k][0] is not None and r[k][1] is not None and r[k][2] >= th and r[k][3] >= th:
-                n_th += 1
-        print(f'Valid pairs: {n}/{len(r)} ({n/len(r)*100:.1f}%)')
-        print(f'Valid pairs at ratio threshold {th:.2f}: {n_th}/{len(r)} ({n_th/len(r)*100:.1f}%)')
-        t = time()
-        dd.io.save(root + '/' + seq + f'/dense/stereo/pairs-dilation-{params.dilation:.2f}.h5', r)
-        with open(root + '/' + seq + f'/dense/stereo/pairs-dilation-{params.dilation:.2f}.txt', 'w') as f:
-            f.write(f'{0} {n} {len(r)} {n/len(r)*100:.1f}\n')
-            f.write(f'{th} {n_th} {len(r)} {n_th/len(r)*100:.1f}\n')
-        print(f'Saved! {(time() - t)/60:.1f} min.')
+    th = params.th
+    r = parse_seq(params.root, params.seq, params.dilation)
+    n, n_th = 0, 0
+    for k in r:
+        if r[k][0] is not None and r[k][1] is not None:
+            n += 1
+        if r[k][0] is not None and r[k][1] is not None and r[k][2] >= th and r[k][3] >= th:
+            n_th += 1
+    print(f'Valid pairs: {n}/{len(r)} ({n/len(r)*100:.1f}%)')
+    print(f'Valid pairs at ratio threshold {th:.2f}: {n_th}/{len(r)} ({n_th/len(r)*100:.1f}%)')
+    t = time()
+    out_dir = os.path.join(params.root, params.seq)
+    dd.io.save(os.path.join(out_dir, f'dense/stereo/pairs-dilation-{params.dilation:.2f}.h5'), r)
+    with open(os.path.join(out_dir, f'dense/stereo/pairs-dilation-{params.dilation:.2f}.txt'), 'w') as f:
+        f.write(f'{0} {n} {len(r)} {n/len(r)*100:.1f}\n')
+        f.write(f'{th} {n_th} {len(r)} {n_th/len(r)*100:.1f}\n')
+    print(f'Saved! {(time() - t)/60:.1f} min.')
