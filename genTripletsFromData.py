@@ -107,7 +107,7 @@ def write_new_vis_pairs(set_loc, set_xx_key, data_loc):
             if pair.split('-')[0] in set_xx_key and pair.split('-')[1] in set_xx_key:
                 valid_pairs.append(pair)
         print (f"Valid pairs for th {th} is {len(valid_pairs)}")
-        np.save('{}keys-th-{:0.1f}.npy'.format(dst_vis_dir, th), valid_pairs)
+        np.save(os.path.join(dst_vis_dir,'keys-th-{:0.1f}.npy'.format(th), valid_pairs)
 
 def write_visibility_files(set_loc, set_xx_key, data_loc, set_xx_idx ):
     vis_list = get_fullpath_list(data_loc, "visibility")
