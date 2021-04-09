@@ -129,14 +129,14 @@ def gen_pair_dict_full(image_pairs):
 def get_set_100(pairs_dict):
     out = [0]
     done = False
-    base_step = len(pairs_dict)//100 - 20
+    base_step = min(15, len(pairs_dict)//100)
     step = base_step
     last = out[-1]
     trial=0
     while not done:
-        if step < 7:
+        if step < (max(2, base_step//2)):
             print ("Jump!")
-            next_idx = last + base_step + 30
+            next_idx = last + 2*base_step
             while next_idx not in pairs_dict:
                 next_idx+=1
             out.append(next_idx)
@@ -245,7 +245,9 @@ def gen_set(triplets, set_size):
 
 def get_10bag( _triplets_list):
     ret_list = []
+    uu= 0
     while len(ret_list) < 10:
+        uu+=1
         _sample_1 = random.choice(_triplets_list)
         
         # Check for values not in ret_list
@@ -263,14 +265,17 @@ def get_10bag( _triplets_list):
         elif len(ret_list) == 9:
             if len(values_to_append) == 1:
                 ret_list = ret_list + values_to_append
+        if uu > 10000:
+            break
     ret_list.sort()
     ret_list = ret_list[::-1]
     return ret_list
 def get_25bag( _triplets_list):
     ret_list = []
+    uu= 0
     while len(ret_list) < 25:
         _sample_1 = random.choice(_triplets_list)
-        
+        uu+=1
         # Check for values not in ret_list
         counter = 0
         values_to_append = []
@@ -286,6 +291,8 @@ def get_25bag( _triplets_list):
         elif len(ret_list) == 24:
             if len(values_to_append) == 1:
                 ret_list = ret_list + values_to_append
+        if uu > 100000:
+            break
     ret_list.sort()
     ret_list = ret_list[::-1]
     return ret_list
