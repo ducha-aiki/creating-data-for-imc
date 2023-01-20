@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--inl_ratio_th", type=float, default=0.1, help='Threshold for pairs generation: if less then it, pair is ignored')
     
     parser.add_argument("--depth_resize_to", type=int, default=200, help='Resize depth_map to this size for speedup. 300 is a good compromise.')
-    parser.add_argument("--dilation", type=float, default=0, help='Some magic number %) Default is fine')
+    parser.add_argument("--dilation", type=float, default=0, help='Some magic number. Default is fine')
     parser.add_argument("--seed", type=int, default=1234, help='Random seed for triplets generation')
     
     args = parser.parse_args()
